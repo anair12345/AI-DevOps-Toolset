@@ -1,0 +1,43 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  TF_VERSION: '1.6.6'
+  WORKING_DIR: 'infra'
+
+stages:
+- stage: Terraform
+  displayName: 'Provision AKS + ACR + Log Analytics'
+  jobs:
+  - job: Apply
+    displayName: 'Terraform apply'
+    steps:
+    - task: Bash@3
+      displayName: 'Install Terraform'
+      inputs:
+        targetType: inline
+        script: |
+          curl -sLo tf.zip https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+          unzip -o tf.zip
+          sudo mv terraform /usr/local/bin/terraform
+
+    - task: AzureCLI@2
+      displayName: 'Terraform init, plan and apply'
+      inputs:
+        azureSubscription: 'AzureRM-Platform-SC'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          cd $(WORKING_DIR)
+          terraform init
+          terraform plan -out tfplan
+          terraform apply -auto-approve tfplan

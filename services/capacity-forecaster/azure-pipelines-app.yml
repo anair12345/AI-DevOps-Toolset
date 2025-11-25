@@ -1,0 +1,68 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/**
+      - helm/**
+      - Dockerfile
+      - requirements.txt
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ACR_NAME: '<your-acr-name>'
+  AKS_RG:   '<your-aks-rg>'
+  AKS_NAME: '<your-aks-name>'
+  IMAGE_TAG: '$(Build.BuildNumber)'
+
+stages:
+- stage: BuildPush
+  displayName: 'Build and push image'
+  jobs:
+  - job: Docker
+    displayName: 'Docker build and push'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'ACR login, build and push'
+      inputs:
+        azureSubscription: 'AzureRM-Platform-SC'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          az acr login -n $(ACR_NAME)
+          IMAGE=$(ACR_NAME).azurecr.io/capacity-forecaster:$(IMAGE_TAG)
+          echo "Building image $IMAGE"
+          docker build -t $IMAGE .
+          docker push $IMAGE
+    - publish: helm/chart
+      artifact: chart
+
+- stage: Deploy
+  displayName: 'Deploy to AKS'
+  dependsOn: BuildPush
+  jobs:
+  - job: HelmUpgrade
+    displayName: 'Helm upgrade/install'
+    steps:
+    - download: current
+      artifact: chart
+    - task: AzureCLI@2
+      displayName: 'Helm upgrade'
+      inputs:
+        azureSubscription: 'AzureRM-Platform-SC'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          az aks get-credentials -g $(AKS_RG) -n $(AKS_NAME) --overwrite-existing
+          IMAGE=$(ACR_NAME).azurecr.io/capacity-forecaster:$(IMAGE_TAG)
+          echo "Deploying image $IMAGE"
+          helm upgrade --install capacity-forecaster ./chart \
+            --set name=capacity-forecaster \
+            --set image.repository=$(ACR_NAME).azurecr.io/capacity-forecaster \
+            --set image.tag=$(IMAGE_TAG) \
+            --set replicaCount=2
