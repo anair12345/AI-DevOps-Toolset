@@ -1,0 +1,15 @@
+# Local override values for cost-drift-watcher
+name: cost-drift-watcher
+image:
+  repository: cost-drift-watcher
+  tag: local
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+ingress:
+  enabled: false
+  host: ""
+env: []

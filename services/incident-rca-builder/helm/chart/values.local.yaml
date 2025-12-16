@@ -1,0 +1,15 @@
+# Local override values for incident-rca-builder
+name: incident-rca-builder
+image:
+  repository: incident-rca-builder
+  tag: local
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+ingress:
+  enabled: false
+  host: ""
+env: []

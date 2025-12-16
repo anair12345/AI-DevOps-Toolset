@@ -1,0 +1,15 @@
+# Local override values for pipeline-doctor
+name: pipeline-doctor
+image:
+  repository: pipeline-doctor
+  tag: local
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+ingress:
+  enabled: false
+  host: ""
+env: []

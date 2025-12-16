@@ -1,0 +1,47 @@
+version: '3'
+
+vars:
+  SERVICE: '{{.SERVICE | default ""}}'
+
+tasks:
+  kind:deploy-one:
+    desc: Deploy one service to KIND (SERVICE=alert-summariser)
+    cmds:
+      - ./infra/local/scripts/run-kind.sh {{.SERVICE}}
+    requires:
+      vars: [SERVICE]
+
+  kind:deploy-all:
+    desc: Deploy all services to KIND
+    cmds:
+      - ./infra/local/scripts/run-kind.sh all
+
+  minikube:deploy-one:
+    desc: Deploy one service to Minikube (SERVICE=alert-summariser)
+    cmds:
+      - ./infra/local/scripts/run-minikube.sh {{.SERVICE}}
+    requires:
+      vars: [SERVICE]
+
+  minikube:deploy-all:
+    desc: Deploy all services to Minikube
+    cmds:
+      - ./infra/local/scripts/run-minikube.sh all
+
+  portal:build:
+    desc: Build the Streamlit portal image
+    cmds:
+      - cd frontend/portal && docker build -t devops-ai-portal:local .
+
+  portal:kind:
+    desc: Build and deploy portal to KIND
+    cmds:
+      - task: portal:build
+      - kind load docker-image devops-ai-portal:local --name devops-ai
+      - helm upgrade --install devops-ai-portal ./frontend/portal/helm/chart --set image.repository=devops-ai-portal --set image.tag=local
+
+  portal:minikube:
+    desc: Build and deploy portal to Minikube (requires minikube docker-env)
+    cmds:
+      - task: portal:build
+      - helm upgrade --install devops-ai-portal ./frontend/portal/helm/chart --set image.repository=devops-ai-portal --set image.tag=local

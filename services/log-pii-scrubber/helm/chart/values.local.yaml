@@ -1,0 +1,15 @@
+# Local override values for log-pii-scrubber
+name: log-pii-scrubber
+image:
+  repository: log-pii-scrubber
+  tag: local
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+ingress:
+  enabled: false
+  host: ""
+env: []

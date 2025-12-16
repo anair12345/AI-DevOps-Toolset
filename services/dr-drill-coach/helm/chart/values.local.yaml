@@ -1,0 +1,15 @@
+# Local override values for dr-drill-coach
+name: dr-drill-coach
+image:
+  repository: dr-drill-coach
+  tag: local
+  pullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  type: ClusterIP
+  port: 80
+containerPort: 8080
+ingress:
+  enabled: false
+  host: ""
+env: []
